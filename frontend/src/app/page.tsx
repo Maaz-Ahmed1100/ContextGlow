@@ -1,21 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useAttentionStream } from '../hooks/useAttentionStream';
 
-// we store messages as objects
-type Message = { role: 'user' | 'assistant'; content: string };
+// we store messages as objects with strict typing
+type Message = { 
+  role: 'user' | 'assistant'; 
+  content: string; 
+};
 
 export default function Home() {
   // we set up our hook to talk to the backend
   const { generatedText, currentAttention, contextSentences, isStreaming, startStream } = useAttentionStream();
   
   // we keep track of the user input and the chat history
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState<string>('');
   const [chatHistory, setChatHistory] = useState<Message[]>([]);
+  
+  // we use a reference to automatically scroll the chat to the bottom
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  // we scroll down every time the chat updates
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatHistory, generatedText]);
 
   // this function runs when the user submits their question
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!inputValue.trim() || isStreaming) return;
     
@@ -32,7 +44,17 @@ export default function Home() {
       
       {/* left column for context viewer */}
       <div className="w-[30%] h-full border-r border-white/10 bg-white/5 backdrop-blur-md p-6 overflow-y-auto flex flex-col gap-4">
-        <h2 className="text-xl font-semibold mb-4 text-white/90">Context Viewer</h2>
+        <h2 className="text-xl font-semibold mb-2 text-white/90">Context Viewer</h2>
+        
+        {/* temperature gauge legend */}
+        <div className="flex flex-col gap-2 mb-4 p-4 rounded-xl bg-gray-900/50 border border-white/5">
+          <span className="text-xs text-gray-400 uppercase tracking-wider">Attention Map</span>
+          <div className="h-2 w-full rounded-full bg-gradient-to-r from-transparent to-red-500/80"></div>
+          <div className="flex justify-between text-xs text-gray-500 font-mono">
+            <span>0.0 (Ignored)</span>
+            <span>1.0 (High Focus)</span>
+          </div>
+        </div>
         
         {contextSentences.length === 0 && (
           <p className="text-sm text-gray-500 italic">ask a question to load context</p>
@@ -43,20 +65,19 @@ export default function Home() {
           const score = currentAttention[item.id] || 0.0;
           
           return (
-            <div 
+            <motion.div 
               key={item.id} 
-              className="p-4 rounded-xl border border-white/10 transition-all duration-300"
-              style={{
-                // we set the background color dynamically based on the score
-                backgroundColor: `rgba(239, 68, 68, ${score * 0.8})`
-              }}
+              // we animate the background color for a smooth glowing effect
+              animate={{ backgroundColor: `rgba(239, 68, 68, ${score * 0.8})` }}
+              transition={{ duration: 0.2, ease: "linear" }}
+              className="p-4 rounded-xl border border-white/10"
             >
               <div className="text-xs text-blue-300 mb-2 font-mono flex justify-between">
                 <span>{item.id}</span>
                 <span>{score.toFixed(2)}</span>
               </div>
               <p className="text-sm leading-relaxed text-gray-100 drop-shadow-md">{item.text}</p>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -96,6 +117,9 @@ export default function Home() {
               </div>
             </div>
           )}
+          
+          {/* this invisible div helps us auto scroll to the bottom */}
+          <div ref={chatEndRef} />
         </div>
 
         {/* sticky input field at bottom */}
