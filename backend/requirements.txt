@@ -5,3 +5,4 @@ chromadb
 torch
 transformers
 inseq
+sentence-transformers
