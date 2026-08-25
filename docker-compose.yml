@@ -1,0 +1,25 @@
+# this file sets up docker for our app
+# it runs both frontend and backend
+version: '3.8'
+
+services:
+  # this is the backend service
+  backend:
+    build: 
+      context: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+
+  # this is the frontend service
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - WATCHPACK_POLLING=true

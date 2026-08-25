@@ -1,0 +1,13 @@
+# python ignores
+__pycache__/
+*.pyc
+.env
+venv/
+env/
+.pytest_cache/
+
+# node ignores
+node_modules/
+.next/
+dist/
+build/
