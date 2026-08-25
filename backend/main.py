@@ -75,6 +75,9 @@ async def chat_endpoint(request: ChatRequest):
             # fallback if offset mapping fails
             pass
             
+        # we send the retrieved sentences to the frontend first so it can display them
+        yield f"data: {json.dumps({'context': retrieved})}\n\n"
+        
         # we generate the text and attributions
         # we limit to 20 tokens to keep things fast for local testing
         out = model.attribute(

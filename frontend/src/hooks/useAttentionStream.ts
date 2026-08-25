@@ -6,6 +6,8 @@ export function useAttentionStream() {
   const [generatedText, setGeneratedText] = useState<string>('');
   // we keep track of the latest attention weights for each sentence
   const [currentAttention, setCurrentAttention] = useState<Record<string, number>>({});
+  // we store the retrieved sentences here
+  const [contextSentences, setContextSentences] = useState<Array<{id: string, text: string}>>([]);
   // we keep track of whether we are currently loading
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
 
@@ -13,6 +15,7 @@ export function useAttentionStream() {
     // we reset our state before starting a new stream
     setGeneratedText('');
     setCurrentAttention({});
+    setContextSentences([]);
     setIsStreaming(true);
 
     try {
@@ -66,6 +69,11 @@ export function useAttentionStream() {
                   if (parsed.attention_map) {
                     setCurrentAttention(parsed.attention_map);
                   }
+                  
+                  // we save the retrieved sentences if the backend sent them
+                  if (parsed.context) {
+                    setContextSentences(parsed.context);
+                  }
                 } catch (e) {
                   console.error('error parsing chunk data', e);
                 }
@@ -85,6 +93,7 @@ export function useAttentionStream() {
   return {
     generatedText,
     currentAttention,
+    contextSentences,
     isStreaming,
     startStream,
   };
