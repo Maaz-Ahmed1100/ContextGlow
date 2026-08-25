@@ -34,3 +34,30 @@ def get_llm():
     if engine is None:
         engine = LLMEngine("gpt2")
     return engine.get_model()
+
+def generate_with_attribution(prompt_template, retrieved_sentences):
+    # we get our loaded inseq model
+    model = get_llm()
+    
+    # we format the retrieved sentences into one text block
+    # we check if sentences are dicts from chromadb or just strings
+    context = " ".join([s["text"] if isinstance(s, dict) else s for s in retrieved_sentences])
+    
+    # we add the context and the prompt together
+    full_input = f"Context: {context}\n\nPrompt: {prompt_template}"
+    
+    print("running attribution generation")
+    
+    # we tell inseq to generate tokens and map their attention back to the input
+    # we keep max new tokens small to make it run fast locally
+    out = model.attribute(
+        full_input,
+        generation_args={"max_new_tokens": 5}
+    )
+    
+    # we print the raw tensor output for verification
+    # this shows the weights linking generated tokens to input tokens
+    print("raw attribution tensor:")
+    print(out.sequence_attributions[0].target_attributions)
+    
+    return out
