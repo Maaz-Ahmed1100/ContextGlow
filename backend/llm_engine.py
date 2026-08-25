@@ -61,3 +61,45 @@ def generate_with_attribution(prompt_template, retrieved_sentences):
     print(out.sequence_attributions[0].target_attributions)
     
     return out
+
+def map_attention_to_sentences(attention_tensor, input_tokens, sentence_id_mapping):
+    # we store the weights for each sentence here
+    sentence_scores = {}
+    
+    # we make sure our tensor is a normal list
+    if hasattr(attention_tensor, "tolist"):
+        weights = attention_tensor.tolist()
+    else:
+        weights = attention_tensor
+        
+    # we go through each token and match it to its sentence
+    for i, weight in enumerate(weights):
+        # we find the sentence id for this token index
+        sent_id = None
+        if isinstance(sentence_id_mapping, dict):
+            sent_id = sentence_id_mapping.get(i)
+        elif i < len(sentence_id_mapping):
+            sent_id = sentence_id_mapping[i]
+            
+        # we save the weight if we found a valid sentence id
+        if sent_id is not None:
+            if sent_id not in sentence_scores:
+                sentence_scores[sent_id] = []
+            sentence_scores[sent_id].append(weight)
+            
+    # we sum the weights for each sentence to get a total score
+    final_scores = {}
+    max_val = 0.0
+    
+    for sent_id, vals in sentence_scores.items():
+        total = sum(vals)
+        final_scores[sent_id] = total
+        if total > max_val:
+            max_val = total
+            
+    # we normalize all scores to be between zero and one for the heatmap
+    if max_val > 0:
+        for sent_id in final_scores:
+            final_scores[sent_id] = final_scores[sent_id] / max_val
+            
+    return final_scores
